@@ -149,8 +149,9 @@ stage('Register New ECS Task Definition') {
                 error "Failed to register task definition. Check AWS permissions or CLI errors."
             }
 
-            env.NEW_TASK_DEF_ARN = newTaskDefArn
-            echo "New Task Definition ARN: ${env.NEW_TASK_DEF_ARN}"
+            withEnv(["NEW_TASK_DEF_ARN=${newTaskDefArn}"]) {
+                echo "New Task Definition ARN: ${env.NEW_TASK_DEF_ARN}"
+            }
         }
     }
 }
