@@ -95,7 +95,7 @@ stage('Register New ECS Task Definition') {
     steps {
         script {
             def taskDefArn = sh(
-                script: "aws ecs describe-task-definition --task-definition $TASK_DEFINITION_FAMILY --query 'taskDefinition.taskDefinitionArn' --output text || echo ''",
+                script: "aws ecs describe-task-definition --task-definition $TASK_DEFINITION_FAMILY --query 'taskDefinition.taskDefinitionArn' --output text 2>/dev/null || echo ''",
                 returnStdout: true
             ).trim()
 
@@ -115,9 +115,9 @@ stage('Register New ECS Task Definition') {
                     --execution-role-arn "$EXECUTION_ROLE_ARN" \
                     --task-role-arn "$TASK_ROLE_ARN" \
                     --container-definitions '[
-                        {
-                            "name": "$CONTAINER_NAME",
-                            "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}",
+                        { 
+                            "name": "$ECS_SERVICE",
+                            "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECS_SERVICE}:${IMAGE_TAG}",
                             "memory": 1024,
                             "cpu": 512,
                             "essential": true,
@@ -137,10 +137,17 @@ stage('Register New ECS Task Definition') {
                                 }
                             }
                         }
-                    ]' --query 'taskDefinition.taskDefinitionArn' --output text
+                    ]' --query 'taskDefinition.taskDefinitionArn' --output text 2>&1
                 """,
                 returnStdout: true
             ).trim()
+
+            // Debugging output
+            echo "Raw Output of Task Definition Registration: ${newTaskDefArn}"
+
+            if (!newTaskDefArn || newTaskDefArn == "null") {
+                error "Failed to register task definition. Check AWS permissions or CLI errors."
+            }
 
             env.NEW_TASK_DEF_ARN = newTaskDefArn
             echo "New Task Definition ARN: ${env.NEW_TASK_DEF_ARN}"
@@ -152,25 +159,33 @@ stage('Register New ECS Task Definition') {
         stage('Check and Create/Update ECS Service') {
     steps {
         script {
-            sh """
-            SERVICE_EXISTS=\$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
+            def serviceExists = sh(
+                script: "aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo 'MISSING'",
+                returnStdout: true
+            ).trim()
 
-            if [ "\$SERVICE_EXISTS" == "MISSING" ]; then
+            if (serviceExists == "MISSING") {
                 echo "Creating ECS Service..."
+                sh """
                 aws ecs create-service \
                     --cluster $ECS_CLUSTER \
                     --service-name $ECS_SERVICE \
-                    --task-definition \$env.NEW_TASK_DEF_ARN \
+                    --task-definition ${env.NEW_TASK_DEF_ARN} \
                     --desired-count 1 \
                     --launch-type EC2
-            else
+                """
+            } else {
                 echo "Updating ECS Service..."
-                aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition \$TASK_DEF_ARN --force-new-deployment
-            fi
-            """
+                sh """
+                aws ecs update-service \
+                    --cluster $ECS_CLUSTER \
+                    --service $ECS_SERVICE \
+                    --task-definition ${env.NEW_TASK_DEF_ARN} \
+                    --force-new-deployment
+                """
+            }
         }
     }
-}
 }
 
     post {
