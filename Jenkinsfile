@@ -26,24 +26,25 @@ pipeline {
             }
         }
 
-        stage('Create ECR Repository') {
+       stage('Create ECR Repository') {
     steps {
         script {
             def repoExists = sh(script: """
-                aws ecr describe-repositories --repository-names terra-ecs-service3 --query repositories[0].repositoryName --output text || echo MISSING
+                aws ecr describe-repositories --repository-names $ECR_REPO --query repositories[0].repositoryName --output text || echo MISSING
             """, returnStdout: true).trim()
 
             if (repoExists == 'MISSING') {
-                echo "Creating ECR Repo: terra-ecs-service3"
+                echo "Creating ECR Repo: $ECR_REPO"
                 sh """
-                aws ecr create-repository --repository-name terra-ecs-service3 --image-scanning-configuration scanOnPush=true --region $AWS_REGION
+                aws ecr create-repository --repository-name $ECR_REPO --image-scanning-configuration scanOnPush=true --region $AWS_REGION
                 """
             } else {
-                echo "ECR Repo 'terra-ecs-service3' already exists."
+                echo "ECR Repo '$ECR_REPO' already exists."
             }
         }
     }
 }
+
 
 stage('Build Docker Image') {
     steps {
