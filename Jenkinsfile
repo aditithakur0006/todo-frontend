@@ -142,29 +142,28 @@ stage('Register New ECS Task Definition') {
 
 
         stage('Check and Create/Update ECS Service') {
-            steps {
-                script {
-                    sh """
-                    source task-def-env.txt
-                    SERVICE_EXISTS=\$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
+    steps {
+        script {
+            sh """
+            . task-def-env.txt
+            SERVICE_EXISTS=\$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
 
-                    if [ "\$SERVICE_EXISTS" == "MISSING" ]; then
-                        echo "Creating ECS Service..."
-                        aws ecs create-service \
-                            --cluster $ECS_CLUSTER \
-                            --service-name $ECS_SERVICE \
-                            --task-definition \$TASK_DEF_ARN \
-                            --desired-count 1 \
-                            --launch-type EC2
-                    else
-                        echo "Updating ECS Service..."
-                        aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition \$TASK_DEF_ARN --force-new-deployment
-                    fi
-                    """
-                }
-            }
+            if [ "\$SERVICE_EXISTS" == "MISSING" ]; then
+                echo "Creating ECS Service..."
+                aws ecs create-service \
+                    --cluster $ECS_CLUSTER \
+                    --service-name $ECS_SERVICE \
+                    --task-definition \$TASK_DEF_ARN \
+                    --desired-count 1 \
+                    --launch-type EC2
+            else
+                echo "Updating ECS Service..."
+                aws ecs update-service --cluster $ECS_CLUSTER --service $ECS_SERVICE --task-definition \$TASK_DEF_ARN --force-new-deployment
+            fi
+            """
         }
     }
+}
 
     post {
         success {
