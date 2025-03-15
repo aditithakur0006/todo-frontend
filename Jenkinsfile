@@ -94,50 +94,56 @@ stage('Build and Push Docker Image') {
 stage('Register New ECS Task Definition') {
     steps {
         script {
-            sh """
-            TASK_DEF_ARN=\$(aws ecs describe-task-definition --task-definition $TASK_DEFINITION_FAMILY --query 'taskDefinition.taskDefinitionArn' --output text || echo "")
+            def taskDefArn = sh(
+                script: "aws ecs describe-task-definition --task-definition $TASK_DEFINITION_FAMILY --query 'taskDefinition.taskDefinitionArn' --output text || echo ''",
+                returnStdout: true
+            ).trim()
 
-            if [ -z "\$TASK_DEF_ARN" ]; then
-                echo "Creating new task definition..."
-            else
+            if (taskDefArn) {
                 echo "Updating existing task definition..."
-            fi
+            } else {
+                echo "Creating new task definition..."
+            }
 
-            new_task_def_arn=\$(aws ecs register-task-definition \
-                --family $TASK_DEFINITION_FAMILY \
-                --network-mode bridge \
-                --requires-compatibilities EC2 \
-                --cpu "512" --memory "1024" \
-                --execution-role-arn "$EXECUTION_ROLE_ARN" \
-                --task-role-arn "$TASK_ROLE_ARN" \
-                --container-definitions '[
-                    {
-                        "name": "$CONTAINER_NAME",
-                        "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}",
-                        "memory": 1024,
-                        "cpu": 512,
-                        "essential": true,
-                        "portMappings": [
-                            {
-                                "containerPort": 80,
-                                "hostPort": 0,
-                                "protocol": "tcp"
-                            }
-                        ],
-                        "logConfiguration": {
-                            "logDriver": "awslogs",
-                            "options": {
-                                "awslogs-group": "$LOG_GROUP_NAME",
-                                "awslogs-region": "$AWS_REGION",
-                                "awslogs-stream-prefix": "ecs"
+            def newTaskDefArn = sh(
+                script: """
+                aws ecs register-task-definition \
+                    --family $TASK_DEFINITION_FAMILY \
+                    --network-mode bridge \
+                    --requires-compatibilities EC2 \
+                    --cpu "512" --memory "1024" \
+                    --execution-role-arn "$EXECUTION_ROLE_ARN" \
+                    --task-role-arn "$TASK_ROLE_ARN" \
+                    --container-definitions '[
+                        {
+                            "name": "$CONTAINER_NAME",
+                            "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}",
+                            "memory": 1024,
+                            "cpu": 512,
+                            "essential": true,
+                            "portMappings": [
+                                {
+                                    "containerPort": 80,
+                                    "hostPort": 0,
+                                    "protocol": "tcp"
+                                }
+                            ],
+                            "logConfiguration": {
+                                "logDriver": "awslogs",
+                                "options": {
+                                    "awslogs-group": "$LOG_GROUP_NAME",
+                                    "awslogs-region": "$AWS_REGION",
+                                    "awslogs-stream-prefix": "ecs"
+                                }
                             }
                         }
-                    }
-                ]' --query 'taskDefinition.taskDefinitionArn' --output text)
-            env.NEW_TASK_DEF_ARN = "\$new_task_def_arn"
+                    ]' --query 'taskDefinition.taskDefinitionArn' --output text
+                """,
+                returnStdout: true
+            ).trim()
 
-            echo "New Task Definition ARN: \$env.NEW_TASK_DEF_ARN"
-            """
+            env.NEW_TASK_DEF_ARN = newTaskDefArn
+            echo "New Task Definition ARN: ${env.NEW_TASK_DEF_ARN}"
         }
     }
 }
