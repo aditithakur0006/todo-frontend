@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_REGION = 'us-east-2'  // Change as needed
         AWS_ACCOUNT_ID = '148761684097'
-        ECS_SERVICE = 'terra-ecs-service1'   // Single variable for service name
+        ECS_SERVICE = 'terra-ecs-service'   // Single variable for service name
         IMAGE_TAG = "${env.BUILD_NUMBER}"
 
         // We'll reuse ECS_SERVICE for ECR repo, container name, and task family
@@ -21,17 +21,16 @@ pipeline {
 
     stages {
         stage('Clone Repository') {
-    steps {
-        git branch: 'main', credentialsId: 'github-token', url: 'https://github.com/aditithakur0006/todo-frontend.git'
-    }
-
+            steps {
+                git branch: 'main', credentialsId: 'github-token', url: 'https://github.com/aditithakur0006/todo-frontend.git'
+            }
         }
 
         stage('Check/Create ECR Repository') {
             steps {
                 script {
                     sh """
-                    REPO_EXISTS=\$(aws ecr describe-repositories --repository-names $ECR_REPO --query 'repositories[*].repositoryName' --output text 2>/dev/null || echo "MISSING")
+                    REPO_EXISTS=\$(aws ecr describe-repositories --repository-names $ECR_REPO --query 'repositories[0].repositoryName' --output text 2>/dev/null || echo "MISSING")
 
                     if [ "\$REPO_EXISTS" = "MISSING" ]; then
                         echo "Creating ECR Repo: $ECR_REPO"
@@ -43,8 +42,6 @@ pipeline {
                 }
             }
         }
-
-       
 
         stage('Build Docker Image') {
             steps {
@@ -62,12 +59,6 @@ pipeline {
                 }
             }
         }
-
-
-
-
-
-        
 
         stage('Push Docker Image to ECR') {
             steps {
