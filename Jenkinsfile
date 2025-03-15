@@ -159,7 +159,6 @@ stage('Register New ECS Task Definition') {
        stage('Check and Create/Update ECS Service') {
     steps {
         script {
-            // Read environment variable from file
             def newTaskDefArn = sh(
                 script: "cat ${WORKSPACE}/env_vars | grep NEW_TASK_DEF_ARN | cut -d'=' -f2",
                 returnStdout: true
@@ -172,12 +171,12 @@ stage('Register New ECS Task Definition') {
             }
 
             def serviceExists = sh(
-                script: "aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo 'MISSING'",
+                script: "aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services' --output json",
                 returnStdout: true
             ).trim()
 
-            if (serviceExists == "MISSING") {
-                echo "🆕 Creating ECS Service..."
+            if (serviceExists.contains("[]")) {
+                echo "🆕 Service does not exist. Creating ECS Service..."
                 sh """
                 aws ecs create-service \
                     --cluster $ECS_CLUSTER \
@@ -187,7 +186,7 @@ stage('Register New ECS Task Definition') {
                     --launch-type EC2
                 """
             } else {
-                echo "♻️ Updating ECS Service..."
+                echo "♻️ Service exists. Updating ECS Service..."
                 sh """
                 aws ecs update-service \
                     --cluster $ECS_CLUSTER \
