@@ -198,7 +198,7 @@ stage('Register New ECS Task Definition') {
             --cluster $ECS_CLUSTER \
             --service $ECS_SERVICE \
             --task-definition $newTaskDefArn \
-            --force-new-deployment 2>&1
+            --force-new-deployment || true
         """,
         returnStdout: true
             ).trim()
