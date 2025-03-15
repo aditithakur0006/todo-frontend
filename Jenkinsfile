@@ -170,31 +170,31 @@ stage('Register New ECS Task Definition') {
                 error "❌ Task Definition ARN is missing!"
             }
 
-            def serviceExists = sh(
-                script: "aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services' --output json",
-                returnStdout: true
-            ).trim()
+            def serviceStatus = sh(
+        script: "aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo 'MISSING'",
+        returnStdout: true
+    ).trim()
 
-            if (serviceExists.contains("[]")) {
-                echo "🆕 Service does not exist. Creating ECS Service..."
-                sh """
-                aws ecs create-service \
-                    --cluster $ECS_CLUSTER \
-                    --service-name $ECS_SERVICE \
-                    --task-definition ${newTaskDefArn} \
-                    --desired-count 1 \
-                    --launch-type EC2
-                """
-            } else {
-                echo "♻️ Service exists. Updating ECS Service..."
-                sh """
-                aws ecs update-service \
-                    --cluster $ECS_CLUSTER \
-                    --service $ECS_SERVICE \
-                    --task-definition ${newTaskDefArn} \
-                    --force-new-deployment
-                """
-            }
+    if (serviceStatus == "MISSING" || serviceStatus == "None") {
+        echo "🆕 Service does not exist. Creating ECS Service..."
+        sh """
+        aws ecs create-service \
+            --cluster $ECS_CLUSTER \
+            --service-name $ECS_SERVICE \
+            --task-definition ${newTaskDefArn} \
+            --desired-count 1 \
+            --launch-type EC2
+        """
+    } else {
+        echo "♻️ Service exists. Updating ECS Service..."
+        sh """
+        aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --task-definition ${newTaskDefArn} \
+            --force-new-deployment
+        """
+    }
         }
     }
 }
