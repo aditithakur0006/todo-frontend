@@ -158,7 +158,7 @@ stage('Register New ECS Task Definition') {
         stage('Check and Create/Update ECS Service') {
     steps {
         script {
-            echo "$NEW_TASK_DEF_ARN"
+            echo "$env.NEW_TASK_DEF_ARN"
             def serviceExists = sh(
                 script: "aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo 'MISSING'",
                 returnStdout: true
