@@ -155,5 +155,36 @@ stage('Register New ECS Task Definition') {
         }
     }
 }
+        stage('Check and Create/Update ECS Service') {
+    steps {
+        script {
+            def serviceExists = sh(
+                script: "aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo 'MISSING'",
+                returnStdout: true
+            ).trim()
+
+            if (serviceExists == "MISSING") {
+                echo "Creating ECS Service..."
+                sh """
+                aws ecs create-service \
+                    --cluster $ECS_CLUSTER \
+                    --service-name $ECS_SERVICE \
+                    --task-definition ${env.NEW_TASK_DEF_ARN} \
+                    --desired-count 1 \
+                    --launch-type EC2
+                """
+            } else {
+                echo "Updating ECS Service..."
+                sh """
+                aws ecs update-service \
+                    --cluster $ECS_CLUSTER \
+                    --service $ECS_SERVICE \
+                    --task-definition ${env.NEW_TASK_DEF_ARN} \
+                    --force-new-deployment
+                """
+            }
+        }
+    }
+}
     }
 }
