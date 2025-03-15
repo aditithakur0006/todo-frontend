@@ -156,46 +156,45 @@ stage('Register New ECS Task Definition') {
         }
     }
 }
-        stage('Check and Create/Update ECS Service') {
+       stage('Check and Create/Update ECS Service') {
     steps {
         script {
-            withEnv(["$(cat $WORKSPACE/env_vars)"]) {  // ✅ Load the stored environment variable
-                def newTaskDefArn = sh(
-                    script: "echo $NEW_TASK_DEF_ARN",
-                    returnStdout: true
-                ).trim()
+            // Read environment variable from file
+            def newTaskDefArn = sh(
+                script: "cat ${WORKSPACE}/env_vars | grep NEW_TASK_DEF_ARN | cut -d'=' -f2",
+                returnStdout: true
+            ).trim()
 
-                echo "Loaded Task Definition ARN: ${newTaskDefArn}"
+            echo "Loaded Task Definition ARN: ${newTaskDefArn}"
 
-                if (!newTaskDefArn || newTaskDefArn == "null") {
-                    error "❌ Task Definition ARN is missing!"
-                }
+            if (!newTaskDefArn || newTaskDefArn == "null") {
+                error "❌ Task Definition ARN is missing!"
+            }
 
-                def serviceExists = sh(
-                    script: "aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo 'MISSING'",
-                    returnStdout: true
-                ).trim()
+            def serviceExists = sh(
+                script: "aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo 'MISSING'",
+                returnStdout: true
+            ).trim()
 
-                if (serviceExists == "MISSING") {
-                    echo "🆕 Creating ECS Service..."
-                    sh """
-                    aws ecs create-service \
-                        --cluster $ECS_CLUSTER \
-                        --service-name $ECS_SERVICE \
-                        --task-definition ${newTaskDefArn} \
-                        --desired-count 1 \
-                        --launch-type EC2
-                    """
-                } else {
-                    echo "♻️ Updating ECS Service..."
-                    sh """
-                    aws ecs update-service \
-                        --cluster $ECS_CLUSTER \
-                        --service $ECS_SERVICE \
-                        --task-definition ${newTaskDefArn} \
-                        --force-new-deployment
-                    """
-                }
+            if (serviceExists == "MISSING") {
+                echo "🆕 Creating ECS Service..."
+                sh """
+                aws ecs create-service \
+                    --cluster $ECS_CLUSTER \
+                    --service-name $ECS_SERVICE \
+                    --task-definition ${newTaskDefArn} \
+                    --desired-count 1 \
+                    --launch-type EC2
+                """
+            } else {
+                echo "♻️ Updating ECS Service..."
+                sh """
+                aws ecs update-service \
+                    --cluster $ECS_CLUSTER \
+                    --service $ECS_SERVICE \
+                    --task-definition ${newTaskDefArn} \
+                    --force-new-deployment
+                """
             }
         }
     }
