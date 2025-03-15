@@ -2,19 +2,17 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'us-east-2'  // Change as needed
+        AWS_REGION = 'us-east-2'  
         AWS_ACCOUNT_ID = '148761684097'
-        ECS_SERVICE = 'terra-ecs-service4'   // Single variable for service name
+        ECS_SERVICE = 'terra-ecs-service4'  
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         NEW_TASK_DEF_ARN = ''
-
-        // We'll reuse ECS_SERVICE for ECR repo, container name, and task family
         ECR_REPO = "${ECS_SERVICE}"
         TASK_DEFINITION_FAMILY = "${ECS_SERVICE}"
         CONTAINER_NAME = "${ECS_SERVICE}"
 
         ECS_CLUSTER = 'terraform-cluster'
-        LOG_GROUP_NAME = "/ecs/${ECS_SERVICE}"  // CloudWatch Log Group
+        LOG_GROUP_NAME = "/ecs/${ECS_SERVICE}" 
 
         EXECUTION_ROLE_ARN = "arn:aws:iam::148761684097:role/ecsTaskExecutionRole"
         TASK_ROLE_ARN = "arn:aws:iam::148761684097:role/ecsTaskExecutionRole"
@@ -86,7 +84,7 @@ stage('Build and Push Docker Image') {
                 echo "CloudWatch Log Group already exists: $LOG_GROUP_NAME"
             } else {
                 echo "Creating CloudWatch Log Group: $LOG_GROUP_NAME"
-                sh (script: "aws logs create-log-group --log-group-name $LOG_GROUP_NAME",
+                sh (script: "aws logs create-log-group --log-group-name $LOG_GROUP_NAME || true",
                 returnStdout: true
             ).trim()
             }
@@ -120,13 +118,13 @@ stage('Register New ECS Task Definition') {
                         { 
                             "name": "$ECS_SERVICE",
                             "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECS_SERVICE}:${IMAGE_TAG}",
-                            "memory": 1024,
-                            "cpu": 512,
+                            "memory": 125,
+                            "cpu": 125,
                             "essential": true,
                             "portMappings": [
                                 {
                                     "containerPort": 80,
-                                    "hostPort": 0,
+                                    "hostPort": 80,
                                     "protocol": "tcp"
                                 }
                             ],
@@ -144,7 +142,6 @@ stage('Register New ECS Task Definition') {
                 returnStdout: true
             ).trim()
 
-            // Debugging output
             echo "Raw Output of Task Definition Registration: ${newTaskDefArn}"
 
             if (!newTaskDefArn || newTaskDefArn == "null") {
@@ -169,7 +166,7 @@ stage('Register New ECS Task Definition') {
             echo "Loaded Task Definition ARN: ${newTaskDefArn}"
 
             if (!newTaskDefArn || newTaskDefArn == "null") {
-                error "❌ Task Definition ARN is missing!"
+                error "Task Definition ARN is missing!"
             }
 
             def serviceStatus = sh(
@@ -178,7 +175,7 @@ stage('Register New ECS Task Definition') {
     ).trim()
 
     if (serviceStatus == "MISSING" || serviceStatus == "None") {
-        echo "🆕 Service does not exist. Creating ECS Service..."
+        echo "Service does not exist. Creating ECS Service..."
         sh (
             script: """
         aws ecs create-service \
@@ -186,12 +183,12 @@ stage('Register New ECS Task Definition') {
             --service-name $ECS_SERVICE \
             --task-definition ${newTaskDefArn} \
             --desired-count 1 \
-            --launch-type EC2
+            --launch-type EC2 || true
         """,
         returnStdout: true
             ).trim()
     } else {
-        echo "♻️ Service exists. Updating ECS Service..."
+        echo "Service exists. Updating ECS Service..."
         sh (
             script: """
         aws ecs update-service \
