@@ -44,17 +44,30 @@ pipeline {
             }
         }
 
+       
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh """
-                    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-                    docker build -t $ECR_REPO:$IMAGE_TAG .
-                    docker tag $ECR_REPO:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
-                    """
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding', 
+                        credentialsId: 'aws-creds'  // Replace with your actual credentials ID
+                    ]]) {
+                        sh """
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+                        docker build -t $ECR_REPO:$IMAGE_TAG .
+                        docker tag $ECR_REPO:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+                        """
+                    }
                 }
             }
         }
+
+
+
+
+
+        
 
         stage('Push Docker Image to ECR') {
             steps {
