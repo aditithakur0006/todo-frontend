@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_REGION = 'us-east-2'  // Change as needed
         AWS_ACCOUNT_ID = '148761684097'
-        ECS_SERVICE = 'terraform-service'   // Single variable for service name
+        ECS_SERVICE = 'terra-ecs-service'   // Single variable for service name
         IMAGE_TAG = "${env.BUILD_NUMBER}"
 
         // We'll reuse ECS_SERVICE for ECR repo, container name, and task family
