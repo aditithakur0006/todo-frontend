@@ -136,7 +136,7 @@ stage('Register New ECS Task Definition') {
                 ]' --query 'taskDefinition.taskDefinitionArn' --output text)
             env.NEW_TASK_DEF_ARN = "\$new_task_def_arn"
 
-            echo "New Task Definition ARN: \$NEW_TASK_DEF_ARN"
+            echo "New Task Definition ARN: \$env.NEW_TASK_DEF_ARN"
             """
         }
     }
