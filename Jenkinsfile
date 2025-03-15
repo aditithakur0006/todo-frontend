@@ -36,8 +36,8 @@ pipeline {
             if (repoExists == 'MISSING') {
                 echo "Creating ECR Repo: $ECR_REPO"
                 sh """
-                aws ecr create-repository --repository-name $ECR_REPO --image-scanning-configuration scanOnPush=true --region $AWS_REGION
-                """
+                aws ecr create-repository --repository-name $ECR_REPO --image-scanning-configuration scanOnPush=true --region $AWS_REGION || true
+                """, returnStdout: true).trim()
             } else {
                 echo "ECR Repo '$ECR_REPO' already exists."
             }
