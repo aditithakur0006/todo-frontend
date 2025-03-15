@@ -155,8 +155,7 @@ stage('Register New ECS Task Definition') {
     }
 }
 
-
-        stage('Check and Create/Update ECS Service') {
+stage('Check and Create/Update ECS Service') {
     steps {
         script {
             def serviceExists = sh(
