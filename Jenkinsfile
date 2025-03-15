@@ -89,57 +89,57 @@ stage('Build and Push Docker Image') {
         }
     }
 }
+stage('Register New ECS Task Definition') {
+    steps {
+        script {
+            sh """
+            TASK_DEF_ARN=\$(aws ecs describe-task-definition --task-definition $TASK_DEFINITION_FAMILY --query 'taskDefinition.taskDefinitionArn' --output text || echo "")
 
-        stage('Register New ECS Task Definition') {
-            steps {
-                script {
-                    sh """
-                    TASK_DEF_ARN=\$(aws ecs describe-task-definition --task-definition $TASK_DEFINITION_FAMILY --query 'taskDefinition.taskDefinitionArn' --output text || echo "")
+            if [ -z "\$TASK_DEF_ARN" ]; then
+                echo "Creating new task definition..."
+            else
+                echo "Updating existing task definition..."
+            fi
 
-                    if [ -z "\$TASK_DEF_ARN" ]; then
-                        echo "Creating new task definition..."
-                    else
-                        echo "Updating existing task definition..."
-                    fi
-
-                    NEW_TASK_DEF_ARN=\$(aws ecs register-task-definition \
-                        --family $TASK_DEFINITION_FAMILY \
-                        --network-mode bridge \
-                        --requires-compatibilities EC2 \
-                        --cpu "512" --memory "1024" \
-                        --execution-role-arn "$EXECUTION_ROLE_ARN" \
-                        --task-role-arn "$TASK_ROLE_ARN" \
-                        --container-definitions '[
+            NEW_TASK_DEF_ARN=\$(aws ecs register-task-definition \
+                --family $TASK_DEFINITION_FAMILY \
+                --network-mode bridge \
+                --requires-compatibilities EC2 \
+                --cpu "512" --memory "1024" \
+                --execution-role-arn "$EXECUTION_ROLE_ARN" \
+                --task-role-arn "$TASK_ROLE_ARN" \
+                --container-definitions '[
+                    {
+                        "name": "$CONTAINER_NAME",
+                        "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}",
+                        "memory": 1024,
+                        "cpu": 512,
+                        "essential": true,
+                        "portMappings": [
                             {
-                                "name": "$CONTAINER_NAME",
-                                "image": "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO:$IMAGE_TAG",
-                                "memory": 1024,
-                                "cpu": 512,
-                                "essential": true,
-                                "portMappings": [
-                                    {
-                                        "containerPort": 80,
-                                        "hostPort": 0,
-                                        "protocol": "tcp"
-                                    }
-                                ],
-                                "logConfiguration": {
-                                    "logDriver": "awslogs",
-                                    "options": {
-                                        "awslogs-group": "$LOG_GROUP_NAME",
-                                        "awslogs-region": "$AWS_REGION",
-                                        "awslogs-stream-prefix": "ecs"
-                                    }
-                                }
+                                "containerPort": 80,
+                                "hostPort": 0,
+                                "protocol": "tcp"
                             }
-                        ]' --query 'taskDefinition.taskDefinitionArn' --output text)
+                        ],
+                        "logConfiguration": {
+                            "logDriver": "awslogs",
+                            "options": {
+                                "awslogs-group": "$LOG_GROUP_NAME",
+                                "awslogs-region": "$AWS_REGION",
+                                "awslogs-stream-prefix": "ecs"
+                            }
+                        }
+                    }
+                ]' --query 'taskDefinition.taskDefinitionArn' --output text)
 
-                    echo "New Task Definition ARN: \$NEW_TASK_DEF_ARN"
-                    echo "TASK_DEF_ARN=\$NEW_TASK_DEF_ARN" >> task-def-env.txt
-                    """
-                }
-            }
+            echo "New Task Definition ARN: \$NEW_TASK_DEF_ARN"
+            echo "TASK_DEF_ARN=\$NEW_TASK_DEF_ARN" >> task-def-env.txt
+            """
         }
+    }
+}
+
 
         stage('Check and Create/Update ECS Service') {
             steps {
