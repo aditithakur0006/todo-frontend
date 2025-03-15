@@ -15,8 +15,8 @@ pipeline {
         ECS_CLUSTER = 'terraform-cluster'
         LOG_GROUP_NAME = "/ecs/${ECS_SERVICE}"  // CloudWatch Log Group
 
-        EXECUTION_ROLE_ARN = "arn:aws:iam::$AWS_ACCOUNT_ID:role/ecsTaskExecutionRole"
-        TASK_ROLE_ARN = "arn:aws:iam::$AWS_ACCOUNT_ID:role/ecsTaskRole"
+        EXECUTION_ROLE_ARN = "arn:aws:iam::148761684097:role/ecsTaskExecutionRole"
+        TASK_ROLE_ARN = "arn:aws:iam::148761684097:role/ecsTaskExecutionRole"
     }
 
     stages {
