@@ -187,14 +187,4 @@ stage('Register New ECS Task Definition') {
         }
     }
 }
-
-    post {
-        success {
-            echo "Deployment successful!"
-        }
-        failure {
-            echo "Deployment failed!"
-        }
-    }
-}
 }
