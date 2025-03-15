@@ -86,7 +86,9 @@ stage('Build and Push Docker Image') {
                 echo "CloudWatch Log Group already exists: $LOG_GROUP_NAME"
             } else {
                 echo "Creating CloudWatch Log Group: $LOG_GROUP_NAME"
-                sh "aws logs create-log-group --log-group-name $LOG_GROUP_NAME"
+                sh (script: "aws logs create-log-group --log-group-name $LOG_GROUP_NAME",
+                returnStdout: true
+            ).trim()
             }
         }
     }
@@ -177,23 +179,29 @@ stage('Register New ECS Task Definition') {
 
     if (serviceStatus == "MISSING" || serviceStatus == "None") {
         echo "🆕 Service does not exist. Creating ECS Service..."
-        sh """
+        sh (
+            script: """
         aws ecs create-service \
             --cluster $ECS_CLUSTER \
             --service-name $ECS_SERVICE \
             --task-definition ${newTaskDefArn} \
             --desired-count 1 \
             --launch-type EC2
-        """
+        """,
+        returnStdout: true
+            ).trim()
     } else {
         echo "♻️ Service exists. Updating ECS Service..."
-        sh """
+        sh (
+            script: """
         aws ecs update-service \
             --cluster $ECS_CLUSTER \
             --service $ECS_SERVICE \
             --task-definition ${newTaskDefArn} \
             --force-new-deployment
-        """
+        """,
+        returnStdout: true
+            ).trim()
     }
         }
     }
