@@ -28,69 +28,69 @@ pipeline {
             }
         }
 
-//        stage('Create ECR Repository') {
-//     steps {
-//         script {
-//             def repoExists = sh(script: """
-//                 aws ecr describe-repositories --repository-names $ECR_REPO --query repositories[0].repositoryName --output text || echo MISSING
-//             """, returnStdout: true).trim()
+       stage('Create ECR Repository') {
+    steps {
+        script {
+            def repoExists = sh(script: """
+                aws ecr describe-repositories --repository-names $ECR_REPO --query repositories[0].repositoryName --output text || echo MISSING
+            """, returnStdout: true).trim()
 
-//             if (repoExists == 'MISSING') {
-//                 echo "Creating ECR Repo: $ECR_REPO"
-//                 sh """
-//                 aws ecr create-repository --repository-name $ECR_REPO --image-scanning-configuration scanOnPush=true --region $AWS_REGION
-//                 """
-//             } else {
-//                 echo "ECR Repo '$ECR_REPO' already exists."
-//             }
-//         }
-//     }
-// }
-
-
-// stage('Build and Push Docker Image') {
-//     steps {
-//         script {
-//             echo "Authenticating Docker with ECR..."
-//             sh """
-//             aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-//             """
-
-//             echo "Building Docker image..."
-//             sh """
-//             docker build -t ${ECR_REPO}:${IMAGE_TAG} .
-//             """
-
-//             echo "Tagging Docker image..."
-//             sh """
-//             docker tag ${ECR_REPO}:${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
-//             """
-
-//             echo "Pushing Docker image to ECR..."
-//             sh """
-//             docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
-//             """
-//         }
-//     }
-// }
+            if (repoExists == 'MISSING') {
+                echo "Creating ECR Repo: $ECR_REPO"
+                sh """
+                aws ecr create-repository --repository-name $ECR_REPO --image-scanning-configuration scanOnPush=true --region $AWS_REGION
+                """
+            } else {
+                echo "ECR Repo '$ECR_REPO' already exists."
+            }
+        }
+    }
+}
 
 
-//       stage('Check/Create CloudWatch Log Group') {
-//     steps {
-//         script {
-//             def logGroupExists = sh(script: """
-//                 aws logs describe-log-groups --log-group-name-prefix $LOG_GROUP_NAME --query 'logGroups[*].logGroupName' --output text
-//             """, returnStdout: true).trim()
+stage('Build and Push Docker Image') {
+    steps {
+        script {
+            echo "Authenticating Docker with ECR..."
+            sh """
+            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+            """
 
-//             if (logGroupExists) {
-//                 echo "CloudWatch Log Group already exists: $LOG_GROUP_NAME"
-//             } else {
-//                 echo "Creating CloudWatch Log Group: $LOG_GROUP_NAME"
-//                 sh "aws logs create-log-group --log-group-name $LOG_GROUP_NAME"
-//             }
-//         }
-//     }
-// }
+            echo "Building Docker image..."
+            sh """
+            docker build -t ${ECR_REPO}:${IMAGE_TAG} .
+            """
+
+            echo "Tagging Docker image..."
+            sh """
+            docker tag ${ECR_REPO}:${IMAGE_TAG} ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
+            """
+
+            echo "Pushing Docker image to ECR..."
+            sh """
+            docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}
+            """
+        }
+    }
+}
+
+
+      stage('Check/Create CloudWatch Log Group') {
+    steps {
+        script {
+            def logGroupExists = sh(script: """
+                aws logs describe-log-groups --log-group-name-prefix $LOG_GROUP_NAME --query 'logGroups[*].logGroupName' --output text
+            """, returnStdout: true).trim()
+
+            if (logGroupExists) {
+                echo "CloudWatch Log Group already exists: $LOG_GROUP_NAME"
+            } else {
+                echo "Creating CloudWatch Log Group: $LOG_GROUP_NAME"
+                sh "aws logs create-log-group --log-group-name $LOG_GROUP_NAME"
+            }
+        }
+    }
+}
 stage('Register New ECS Task Definition') {
     steps {
         script {
