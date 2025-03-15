@@ -73,22 +73,22 @@ stage('Build and Push Docker Image') {
 }
 
 
-        stage('Check/Create CloudWatch Log Group') {
-            steps {
-                script {
-                    sh """
-                    LOG_GROUP_EXISTS=\$(aws logs describe-log-groups --log-group-name-prefix $LOG_GROUP_NAME --query 'logGroups[*].logGroupName' --output text)
+      stage('Check/Create CloudWatch Log Group') {
+    steps {
+        script {
+            def logGroupExists = sh(script: """
+                aws logs describe-log-groups --log-group-name-prefix $LOG_GROUP_NAME --query 'logGroups[*].logGroupName' --output text
+            """, returnStdout: true).trim()
 
-                    if [ -z "\$LOG_GROUP_EXISTS" ]; then
-                        echo "Creating CloudWatch Log Group: $LOG_GROUP_NAME"
-                        aws logs create-log-group --log-group-name $LOG_GROUP_NAME
-                    else
-                        echo "CloudWatch Log Group already exists: $LOG_GROUP_NAME"
-                    fi
-                    """
-                }
+            if (logGroupExists) {
+                echo "CloudWatch Log Group already exists: $LOG_GROUP_NAME"
+            } else {
+                echo "Creating CloudWatch Log Group: $LOG_GROUP_NAME"
+                sh "aws logs create-log-group --log-group-name $LOG_GROUP_NAME"
             }
         }
+    }
+}
 
         stage('Register New ECS Task Definition') {
             steps {
