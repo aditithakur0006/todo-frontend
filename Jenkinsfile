@@ -184,7 +184,7 @@ stage('Register New ECS Task Definition') {
             --task-definition ${newTaskDefArn} \
             --desired-count 1 \
             --launch-type EC2 \
-            --deployment-configuration "maximumPercent=100,minimumHealthyPercent=0 || true
+            --deployment-configuration "maximumPercent=100,minimumHealthyPercent=0" || true
         """,
         returnStdout: true
             ).trim()
@@ -196,7 +196,7 @@ stage('Register New ECS Task Definition') {
             --cluster $ECS_CLUSTER \
             --service $ECS_SERVICE \
             --task-definition $newTaskDefArn \
-            --deployment-configuration "maximumPercent=100,minimumHealthyPercent=0 \
+            --deployment-configuration "maximumPercent=100,minimumHealthyPercent=0" \
             --force-new-deployment || true
         """,
         returnStdout: true
