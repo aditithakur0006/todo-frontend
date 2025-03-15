@@ -193,13 +193,13 @@ stage('Register New ECS Task Definition') {
     } else {
         echo "♻️ Service exists. Updating ECS Service..."
         sh (
-            script: """
+            script: '''
         aws ecs update-service \
             --cluster $ECS_CLUSTER \
             --service $ECS_SERVICE \
             --task-definition ${newTaskDefArn} \
             --force-new-deployment
-        """,
+        ''',
         returnStdout: true
             ).trim()
     }
