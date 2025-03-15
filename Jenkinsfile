@@ -197,7 +197,7 @@ stage('Register New ECS Task Definition') {
         aws ecs update-service \
             --cluster $ECS_CLUSTER \
             --service $ECS_SERVICE \
-            --task-definition ${newTaskDefArn} \
+            --task-definition $newTaskDefArn \
             --force-new-deployment
         ''',
         returnStdout: true
