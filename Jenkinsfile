@@ -154,3 +154,5 @@ stage('Register New ECS Task Definition') {
         }
     }
 }
+    }
+}
