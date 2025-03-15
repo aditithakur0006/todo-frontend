@@ -6,6 +6,7 @@ pipeline {
         AWS_ACCOUNT_ID = '148761684097'
         ECS_SERVICE = 'terra-ecs-service4'   // Single variable for service name
         IMAGE_TAG = "${env.BUILD_NUMBER}"
+        NEW_TASK_DEF_ARN = ''
 
         // We'll reuse ECS_SERVICE for ECR repo, container name, and task family
         ECR_REPO = "${ECS_SERVICE}"
@@ -17,6 +18,7 @@ pipeline {
 
         EXECUTION_ROLE_ARN = "arn:aws:iam::148761684097:role/ecsTaskExecutionRole"
         TASK_ROLE_ARN = "arn:aws:iam::148761684097:role/ecsTaskExecutionRole"
+        
     }
 
     stages {
@@ -101,7 +103,7 @@ stage('Register New ECS Task Definition') {
                 echo "Updating existing task definition..."
             fi
 
-            NEW_TASK_DEF_ARN=\$(aws ecs register-task-definition \
+            new_task_def_arn=\$(aws ecs register-task-definition \
                 --family $TASK_DEFINITION_FAMILY \
                 --network-mode bridge \
                 --requires-compatibilities EC2 \
@@ -132,9 +134,9 @@ stage('Register New ECS Task Definition') {
                         }
                     }
                 ]' --query 'taskDefinition.taskDefinitionArn' --output text)
+            env.NEW_TASK_DEF_ARN = $new_task_def_arn
 
             echo "New Task Definition ARN: \$NEW_TASK_DEF_ARN"
-            echo "TASK_DEF_ARN=\$NEW_TASK_DEF_ARN" >> task-def-env.txt
             """
         }
     }
@@ -145,7 +147,6 @@ stage('Register New ECS Task Definition') {
     steps {
         script {
             sh """
-            . task-def-env.txt
             SERVICE_EXISTS=\$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo "MISSING")
 
             if [ "\$SERVICE_EXISTS" == "MISSING" ]; then
@@ -153,7 +154,7 @@ stage('Register New ECS Task Definition') {
                 aws ecs create-service \
                     --cluster $ECS_CLUSTER \
                     --service-name $ECS_SERVICE \
-                    --task-definition \$TASK_DEF_ARN \
+                    --task-definition \$env.NEW_TASK_DEF_ARN \
                     --desired-count 1 \
                     --launch-type EC2
             else
