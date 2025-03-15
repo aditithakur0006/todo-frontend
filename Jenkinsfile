@@ -21,10 +21,10 @@ pipeline {
 
     stages {
         stage('Clone Repository') {
-            steps {
-                git 'https://github.com/aditithakur0006/todo-frontend.git'
+    steps {
+        git branch: 'main', credentialsId: 'github-token', url: 'https://github.com/aditithakur0006/todo-frontend.git'
+    }
 
-            }
         }
 
         stage('Check/Create ECR Repository') {
