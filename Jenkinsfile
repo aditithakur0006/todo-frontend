@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_REGION = 'us-east-2'  
         AWS_ACCOUNT_ID = '148761684097'
-        ECS_SERVICE = 'terra-ecs-service4'  
+        ECS_SERVICE = 'todo-frontend'  
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         NEW_TASK_DEF_ARN = ''
         ECR_REPO = "${ECS_SERVICE}"
