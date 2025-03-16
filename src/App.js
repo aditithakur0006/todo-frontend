@@ -4,7 +4,7 @@ import TodoItems from "./components/TodoItems";
 import CreateTodo from "./components/CreateTodo";
 
 // const SERVER_URL = "http://localhost:3001";
-const SERVER_URL = process.env.BACKEND_SERVER || "http://internal-terra-lb-458620945.us-east-2.elb.amazonaws.com:3001" ;
+const SERVER_URL = process.env.BACKEND_SERVER || "http://10.1.4.25:3001" ;
 
 const App = () => {
   const [todoItems, setTodoItems] = useState([]);
