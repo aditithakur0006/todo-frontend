@@ -8,7 +8,6 @@ COPY package.json package.json
 RUN npm install
 
 COPY . .
-RUN mkdir -p /var/log/frontend-logs/ && chmod -R 777 /var/log/frontend-logs/
 
 RUN npm run build
 
@@ -17,6 +16,8 @@ FROM nginx:alpine
 WORKDIR /usr/share/nginx/html
 
 RUN rm -rf ./*
+RUN mkdir -p /var/log/frontend-logs/ && chmod -R 777 /var/log/frontend-logs/
+
 
 COPY --from=builder /app/build .
 
