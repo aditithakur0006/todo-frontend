@@ -22,4 +22,4 @@ COPY --from=builder /app/build .
 
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
 
-CMD ["sh", "-c", "nginx -g 'daemon off;' > /var/log/frontend-logs/access.log"]
+CMD ["bash", "-c", "nginx -g 'daemon off;' > /var/log/frontend-logs/access.log"]
