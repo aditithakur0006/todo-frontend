@@ -20,6 +20,5 @@ RUN rm -rf ./*
 
 COPY --from=builder /app/build .
 
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
 
 CMD ["bash", "-c", "nginx -g 'daemon off;' > /var/log/frontend-logs/access.log"]
