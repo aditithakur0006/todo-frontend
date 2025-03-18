@@ -8,6 +8,7 @@ COPY package.json package.json
 RUN npm install
 
 COPY . .
+RUN mkdir -p /var/log/frontend-logs/ && chmod -R 777 /var/log/frontend-logs/
 
 RUN npm run build
 
@@ -20,3 +21,5 @@ RUN rm -rf ./*
 COPY --from=builder /app/build .
 
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
+
+CMD ["sh", "-c", "nginx -g 'daemon off;' > /var/log/frontend-logs/access.log"]
