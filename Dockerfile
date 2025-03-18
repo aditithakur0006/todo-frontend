@@ -21,4 +21,4 @@ RUN rm -rf ./*
 COPY --from=builder /app/build .
 
 
-CMD ["bash", "-c", "nginx -g 'daemon off;' > /var/log/frontend-logs/access.log"]
+CMD ["sh", "-c", "nginx -g 'daemon off;' > /var/log/frontend-logs/access.log"]
